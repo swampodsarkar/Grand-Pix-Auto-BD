@@ -100,23 +100,35 @@ export default function App() {
        const now = Date.now();
        const repairs: any = {};
        
-       Object.values(gameState.vehicles).forEach((v: any) => {
-          // If vehicle is damaged and hasn't been used for 2 minutes (120000ms)
-          // AND it's not currently being driven (ownerId is null)
-          const lastUsed = v.lastInteractionTime || 0;
-          const isIdleLongEnough = (now - lastUsed) > 120000;
-          const isDamaged = v.health < 100;
-          const needsRespawn = v.originX !== undefined && v.originY !== undefined && (Math.abs(v.x - v.originX) > 100 || Math.abs(v.y - v.originY) > 100);
+        Object.values(gameState.vehicles).forEach((v: any) => {
+           const lastUsed = v.lastInteractionTime || 0;
+           const isIdleLongEnough = (now - lastUsed) > 120000;
+           const isDamaged = v.health < 100;
+           const needsRespawn = v.originX !== undefined && v.originY !== undefined && (Math.abs(v.x - v.originX) > 100 || Math.abs(v.y - v.originY) > 100);
 
-          if (!v.ownerId && isIdleLongEnough && (isDamaged || needsRespawn)) {
-             repairs[`rooms/${roomId}/gameState/vehicles/${v.id}/health`] = 100;
-             repairs[`rooms/${roomId}/gameState/vehicles/${v.id}/fuel`] = 100;
-             if (v.originX !== undefined) repairs[`rooms/${roomId}/gameState/vehicles/${v.id}/x`] = v.originX;
-             if (v.originY !== undefined) repairs[`rooms/${roomId}/gameState/vehicles/${v.id}/y`] = v.originY;
-             repairs[`rooms/${roomId}/gameState/vehicles/${v.id}/speed`] = 0;
-             repairs[`rooms/${roomId}/gameState/vehicles/${v.id}/lastInteractionTime`] = now;
+           if (!v.ownerId && isIdleLongEnough && (isDamaged || needsRespawn)) {
+              repairs[`rooms/${roomId}/gameState/vehicles/${v.id}/health`] = 100;
+              repairs[`rooms/${roomId}/gameState/vehicles/${v.id}/fuel`] = 100;
+              if (v.originX !== undefined) repairs[`rooms/${roomId}/gameState/vehicles/${v.id}/x`] = v.originX;
+              if (v.originY !== undefined) repairs[`rooms/${roomId}/gameState/vehicles/${v.id}/y`] = v.originY;
+              repairs[`rooms/${roomId}/gameState/vehicles/${v.id}/speed`] = 0;
+              repairs[`rooms/${roomId}/gameState/vehicles/${v.id}/lastInteractionTime`] = now;
+           }
+        });
+
+        // Kick inactive players (2 minutes no movement)
+        Object.values(gameState.players).forEach((player: any) => {
+          const lastActive = player.lastActive || 0;
+          if (now - lastActive > 120000 && player.id !== myId) {
+            repairs[`rooms/${roomId}/gameState/players/${player.id}`] = null;
           }
-       });
+        });
+
+        // If room becomes empty, clear the entire room
+        const activePlayers = Object.keys(gameState.players || {}).length;
+        if (activePlayers === 0) {
+          repairs[`rooms/${roomId}`] = null;
+        }
 
        if (Object.keys(repairs).length > 0) {
           update(ref(rtdb), repairs);
@@ -126,7 +138,35 @@ export default function App() {
     return () => clearInterval(interval);
   }, [roomId]);
 
-  // Persistent data auto-save (every 30 seconds)
+  // Daily Reward + Push Notification simulation
+  useEffect(() => {
+    if (!playerName) return;
+    
+    const lastReward = localStorage.getItem("last_daily_reward");
+    const today = new Date().toDateString();
+    
+    if (lastReward !== today) {
+      // Show daily reward notification
+      if ("Notification" in window && Notification.permission === "granted") {
+        new Notification("Daily Reward!", {
+          body: "You received ৳500 daily login bonus!",
+          icon: "/vite.svg"
+        });
+      }
+      
+      // Give reward
+      const myId = useGameStore.getState().myId;
+      const roomId = useGameStore.getState().roomId;
+      if (myId && roomId) {
+        const currentMoney = useGameStore.getState().gameState?.players[myId]?.money || 0;
+        update(ref(rtdb), {
+          [`rooms/${roomId}/gameState/players/${myId}/money`]: currentMoney + 500
+        });
+      }
+      
+      localStorage.setItem("last_daily_reward", today);
+    }
+  }, [playerName]);
   useEffect(() => {
     if (!roomId || !playerName) return;
 
@@ -187,7 +227,7 @@ export default function App() {
         <RoomListScreen />
       ) : (
         <>
-          <GameCanvas />
+           <GameCanvas />
           <HUD />
           <Dealership />
         </>

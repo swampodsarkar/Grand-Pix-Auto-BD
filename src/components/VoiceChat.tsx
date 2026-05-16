@@ -134,9 +134,25 @@ export function VoiceChat() {
 
   if (!myId || !roomId) return null;
 
+  const handleVoiceClick = async () => {
+    // Request microphone permission (important for Android APK)
+    try {
+      await navigator.mediaDevices.getUserMedia({ audio: true });
+    } catch (err) {
+      alert("Microphone permission denied. Voice chat won't work.");
+      return;
+    }
+
+    if (inChannel) {
+      leaveChannel();
+    } else {
+      joinChannel();
+    }
+  };
+
   return (
     <button
-      onClick={inChannel ? leaveChannel : joinChannel}
+      onClick={handleVoiceClick}
       disabled={connecting}
       className="w-9 h-9 flex items-center justify-center bg-slate-900/90 backdrop-blur border border-slate-700 rounded-full shadow pointer-events-auto active:scale-95 transition-all"
       title={inChannel ? "Leave voice" : "Join proximity voice"}

@@ -295,11 +295,25 @@ export function GameCanvas() {
           updatesForCar[`rooms/${roomId}/gameState/vehicles/${p.inVehicleId}/ownerId`] = v.purchasedBy;
         }
         update(ref(rtdb), updatesForCar);
+
+        // Stop car music
+        if ((window as any).__carMusic) {
+          (window as any).__carMusic.pause();
+        }
         return; // Exited car, stop processing
-      } else {
-        // Priority 1: Enter nearby car
-        let closest: any = null;
-        let minDist = 150; // Distance to enter
+        } else {
+          // Play car music
+          if (!(window as any).__carMusic) {
+            const musicUrl = new URL('../../assets/music.mp3', import.meta.url).href;
+            (window as any).__carMusic = new Audio(musicUrl);
+            (window as any).__carMusic.loop = true;
+            (window as any).__carMusic.volume = 0.5;
+          }
+          (window as any).__carMusic.play().catch(() => {});
+
+          // Priority 1: Enter nearby car
+          let closest: any = null;
+          let minDist = 150; // Distance to enter
         const vehicles = state.vehicles || {};
         for (const vKey in vehicles) {
           const v = vehicles[vKey];
@@ -579,6 +593,7 @@ export function GameCanvas() {
     let camera = { x: 0, y: 0 };
     let tireMarks: Array<{x: number, y: number, a: number, angle: number, id: number}> = [];
     let markId = 0;
+    let particles: Array<{x: number, y: number, vx: number, vy: number, life: number, size: number}> = [];
 
     const draw = () => {
       const { gameState: state, myId, graphicsQuality, worldTime } = useGameStore.getState();
@@ -596,9 +611,10 @@ export function GameCanvas() {
         ctx.scale(dpr, dpr);
       }
 
-      // Quality specific settings
+      // Performance optimization
       const showShadows = graphicsQuality !== "low";
-      const renderDist = graphicsQuality === "low" ? 1500 : graphicsQuality === "medium" ? 2500 : 4000;
+      const renderDist = graphicsQuality === "low" ? 1200 : graphicsQuality === "medium" ? 2200 : 3500;
+      const maxParticles = graphicsQuality === "low" ? 80 : graphicsQuality === "medium" ? 150 : 300;
       
       // Draw Grid / Ground Textures
       const drawGrid = (size: number, color: string) => {
@@ -1066,17 +1082,26 @@ export function GameCanvas() {
            ctx.fillText(item.label, item.x + item.w/2, item.y - item.height + item.h/2);
            ctx.shadowBlur = 0;
 
-        } else if (item.type === "vehicle") {
-           ctx.save();
-           // Apply vehicle drop shadow
-           ctx.shadowBlur = 15;
-           ctx.shadowOffsetX = 5;
-           ctx.shadowOffsetY = 10;
-           
-           ctx.translate(item.x, item.y);
-           if (item.angle !== undefined) {
-             ctx.rotate(item.angle);
-           }
+         } else if (item.type === "vehicle") {
+            ctx.save();
+            // Apply vehicle drop shadow
+            ctx.shadowBlur = 15;
+            ctx.shadowOffsetX = 5;
+            ctx.shadowOffsetY = 10;
+
+            // Strong smoothing for high speed (reduce shake)
+            let drawX = item.x;
+            let drawY = item.y;
+            if (item.speed && Math.abs(item.speed) > 6) {
+              const smoothFactor = 0.85; // stronger smoothing
+              drawX = item.x * smoothFactor + (item.lastX || item.x) * (1 - smoothFactor);
+              drawY = item.y * smoothFactor + (item.lastY || item.y) * (1 - smoothFactor);
+            }
+            
+            ctx.translate(drawX, drawY);
+            if (item.angle !== undefined) {
+              ctx.rotate(item.angle);
+            }
            
            // Generate tire marks if turning hard (drifting locally)
            if (item.speed !== undefined && Math.abs(item.speed) > 8 && item.ownerId === myId) {
@@ -1250,7 +1275,36 @@ export function GameCanvas() {
              ctx.fillStyle = "#ef4444";
              ctx.fillRect(-29, -14, 3, 6); ctx.fillRect(-29, 8, 3, 6);
 
-           } else if (item.carType === "taxi") {
+            } else if (item.carType === "taxi") {
+              // Taxi drawing already exists
+
+            } else if (item.carType === "quad") {
+              // Quad Bike
+              ctx.fillStyle = "#334155";
+              ctx.fillRect(-18, -10, 36, 20);
+              ctx.fillStyle = "#1e2937";
+              ctx.fillRect(-10, -6, 20, 12);
+              ctx.fillStyle = "#64748b";
+              ctx.fillRect(-22, -14, 8, 8);
+              ctx.fillRect(14, -14, 8, 8);
+              ctx.fillRect(-22, 6, 8, 8);
+              ctx.fillRect(14, 6, 8, 8);
+
+            } else if (item.carType === "helicopter") {
+              // Helicopter
+              ctx.fillStyle = "#1e40af";
+              ctx.beginPath();
+              ctx.ellipse(0, 0, 22, 10, 0, 0, Math.PI * 2);
+              ctx.fill();
+              ctx.fillStyle = "#1e3a8a";
+              ctx.fillRect(-4, -4, 8, 8);
+              // Rotor
+              ctx.strokeStyle = "#64748b";
+              ctx.lineWidth = 3;
+              ctx.beginPath();
+              ctx.moveTo(-30, -8);
+              ctx.lineTo(30, -8);
+              ctx.stroke();
              // Tires
              ctx.fillStyle = "#111";
              ctx.beginPath(); ctx.roundRect(-20, -18, 12, 4, 2); ctx.fill();
@@ -1690,6 +1744,25 @@ export function GameCanvas() {
             ctx.lineTo(rx + rainAngleX, ry + dropLen);
         }
         ctx.stroke();
+
+        // Update & draw dust particles
+        ctx.fillStyle = "rgba(210, 180, 140, 0.6)";
+        for (let i = particles.length - 1; i >= 0; i--) {
+          const pt = particles[i];
+          pt.x += pt.vx;
+          pt.y += pt.vy;
+          pt.life--;
+          pt.size *= 0.96;
+
+          if (pt.life <= 0 || pt.size < 0.5) {
+            particles.splice(i, 1);
+            continue;
+          }
+
+          ctx.beginPath();
+          ctx.arc(pt.x, pt.y, pt.size, 0, Math.PI * 2);
+          ctx.fill();
+        }
 
         // Splash effects on ground (if High quality)
         if (graphicsQuality === "high") {

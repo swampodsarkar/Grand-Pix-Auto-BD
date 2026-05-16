@@ -1,14 +1,15 @@
 export const MAP_SIZE = 30000;
 
 export const MAP_BUILDINGS: Array<{id: string, x: number; y: number; w: number; h: number; color: string; height: number; label: string}> = [
-  { id: "mosque", x: 15350, y: 15350, w: 400, h: 400, color: "#f1f5f9", height: 180, label: "Central Mosque" },
-  { id: "tea_stall", x: 14600, y: 15300, w: 100, h: 80, color: "#78350f", height: 20, label: "Tea Stall" },
-  { id: "registry", x: 14400, y: 14400, w: 250, h: 250, color: "#475569", height: 60, label: "Land Registry" },
-  { id: "police", x: 15350, y: 14500, w: 250, h: 180, color: "#1e3a8a", height: 50, label: "Police Station" },
-  { id: "union_parishad", x: 15350, y: 15800, w: 300, h: 200, color: "#78350f", height: 40, label: "Union Council" },
-  { id: "clinic", x: 14400, y: 15800, w: 250, h: 200, color: "#dc2626", height: 60, label: "Clinic" },
-  { id: "haat", x: 14100, y: 15300, w: 400, h: 250, color: "#16a34a", height: 40, label: "Village Market" },
-  { id: "equipment", x: 14800, y: 15800, w: 300, h: 200, color: "#f59e0b", height: 50, label: "Farming Shop" },
+  // Spread out main buildings
+  { id: "mosque", x: 8500, y: 8500, w: 400, h: 400, color: "#f1f5g9", height: 180, label: "Central Mosque" },
+  { id: "tea_stall", x: 9200, y: 8700, w: 100, h: 80, color: "#78350f", height: 20, label: "Tea Stall" },
+  { id: "registry", x: 21000, y: 7500, w: 250, h: 250, color: "#475569", height: 60, label: "Land Registry" },
+  { id: "police", x: 18500, y: 19500, w: 250, h: 180, color: "#1e3a8a", height: 50, label: "Police Station" },
+  { id: "union_parishad", x: 6500, y: 18500, w: 300, h: 200, color: "#78350f", height: 40, label: "Union Council" },
+  { id: "clinic", x: 22500, y: 14500, w: 250, h: 200, color: "#dc2626", height: 60, label: "Clinic" },
+  { id: "haat", x: 13500, y: 22000, w: 400, h: 250, color: "#16a34a", height: 40, label: "Village Market" },
+  { id: "equipment", x: 7500, y: 13500, w: 300, h: 200, color: "#f59e0b", height: 50, label: "Farming Shop" },
   
   // Buyable Land Plots (Khet) - Spread far out
   { id: "dhan_khet", x: 5000, y: 5000, w: 2000, h: 2000, color: "#15803d", height: 2, label: "Rice Field" },
@@ -25,6 +26,7 @@ export const MAP_BUILDINGS: Array<{id: string, x: number; y: number; w: number; 
   { id: "bari2", x: 15350, y: 14300, w: 150, h: 150, color: "#312e81", height: 80, label: "Mud House" },
   { id: "football_field", x: 13200, y: 14100, w: 1000, h: 600, color: "#15803d", height: 1, label: "Football Field" },
   { id: "school", x: 14200, y: 14100, w: 400, h: 200, color: "#94a3b8", height: 40, label: "Primary School" },
+  { id: "airport", x: 25000, y: 25000, w: 1200, h: 800, color: "#64748b", height: 5, label: "Airport" },
 ];
 
 // Add thousands of trees spread across the map

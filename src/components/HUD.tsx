@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useGameStore } from "../store/useGameStore";
 import { rtdb } from "../firebase";
 import { ref, push, set, onChildAdded, update } from "firebase/database";
-import { Phone, Users, Landmark, Car, MessageSquare, Map as MapIcon, X, Navigation, Anchor, Fish, Tractor, ShoppingBag, Home, Settings, ChevronDown, ChevronUp } from "lucide-react";
+import { Phone, Users, Landmark, Car, MessageSquare, Map as MapIcon, X, Navigation, Anchor, Fish, Tractor, ShoppingBag, Home, Settings, ChevronDown, ChevronUp, Trophy, Calendar } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { Minimap } from "./Minimap";
 import { VoiceChat } from "./VoiceChat";
@@ -502,8 +502,13 @@ function PhoneUI() {
             <div className="grid grid-cols-2 landscape:grid-cols-4 gap-3 landscape:gap-4 pt-4 landscape:pt-6">
               <PhoneAppIcon icon={Landmark} label="Bank" color="bg-lime-600" onClick={() => togglePhoneState("bank")} />
               <PhoneAppIcon icon={ShoppingBag} label="Inventory" color="bg-indigo-600" onClick={() => togglePhoneState("inventory")} />
-              <PhoneAppIcon icon={Users} label="Contacts" color="bg-blue-500" onClick={() => togglePhoneState("contacts")} />
-              <PhoneAppIcon icon={MapIcon} label="Village Map" color="bg-slate-800" onClick={() => { setShowFullMap(true); togglePhoneState(null); }} />
+               <PhoneAppIcon icon={Users} label="Contacts" color="bg-blue-500" onClick={() => togglePhoneState("contacts")} />
+               <PhoneAppIcon icon={MapIcon} label="Village Map" color="bg-slate-800" onClick={() => { setShowFullMap(true); togglePhoneState(null); }} />
+               <PhoneAppIcon icon={Trophy} label="Leaderboard" color="bg-yellow-600" onClick={() => togglePhoneState("leaderboard")} />
+               <PhoneAppIcon icon={Users} label="Clan" color="bg-purple-600" onClick={() => togglePhoneState("clan")} />
+               <PhoneAppIcon icon={ShoppingBag} label="Trade" color="bg-emerald-600" onClick={() => togglePhoneState("trade")} />
+               <PhoneAppIcon icon={Calendar} label="Events" color="bg-orange-600" onClick={() => togglePhoneState("events")} />
+               <PhoneAppIcon icon={Home} label="Property" color="bg-blue-600" onClick={() => togglePhoneState("property")} />
             </div>
           )}
 
@@ -565,14 +570,162 @@ function PhoneUI() {
                </div>
                <h3 className="text-2xl font-black text-orange-600 tracking-tighter">$0</h3>
              </div>
-             <div className="bg-white p-4 rounded-2xl border border-slate-200">
-                <p className="text-xs text-slate-500 font-medium">Bhumi Registry office theke jomi kinun.</p>
-             </div>
-           </div>
-         )}
- 
+              <div className="bg-white p-4 rounded-2xl border border-slate-200">
+                 <p className="text-xs text-slate-500 font-medium">Bhumi Registry office theke jomi kinun.</p>
+              </div>
 
-      </div>
+              {/* Apartment Buy/Sell */}
+              <div className="mt-4">
+                <div className="text-sm font-black mb-2">Apartment</div>
+                {!me.ownedProperties?.includes("apartment") ? (
+                  <button 
+                    onClick={() => {
+                      if ((me.money || 0) >= 15000) {
+                        const updates: any = {};
+                        updates[`rooms/${roomId}/gameState/players/${myId}/money`] = (me.money || 0) - 15000;
+                        updates[`rooms/${roomId}/gameState/players/${myId}/ownedProperties`] = [...(me.ownedProperties || []), "apartment"];
+                        update(ref(rtdb), updates);
+                      }
+                    }}
+                    className="w-full py-2 bg-emerald-600 text-white rounded-xl font-black text-sm active:scale-95"
+                  >
+                    Buy Apartment - ৳15,000
+                  </button>
+                ) : (
+                  <button 
+                    onClick={() => {
+                      const updates: any = {};
+                      updates[`rooms/${roomId}/gameState/players/${myId}/money`] = (me.money || 0) + 12000;
+                      const newProps = (me.ownedProperties || []).filter(p => p !== "apartment");
+                      updates[`rooms/${roomId}/gameState/players/${myId}/ownedProperties`] = newProps.length ? newProps : null;
+                      update(ref(rtdb), updates);
+                    }}
+                    className="w-full py-2 bg-red-600 text-white rounded-xl font-black text-sm active:scale-95"
+                  >
+                    Sell Apartment - Get ৳12,000
+                  </button>
+                )}
+              </div>
+            </div>
+          )}
+
+          {activePhoneTab === "leaderboard" && (
+            <div className="p-4">
+              <div className="text-yellow-600 font-black text-lg mb-3 flex items-center gap-2">
+                <Trophy className="w-5 h-5" /> Top Farmers
+              </div>
+              <div className="space-y-2 text-sm">
+                {Object.values(gameState?.players || {}).sort((a: any, b: any) => (b.money || 0) - (a.money || 0)).slice(0, 8).map((p: any, i) => (
+                  <div key={i} className="flex justify-between bg-white p-2 rounded-xl border">
+                    <span className="font-bold">{p.name}</span>
+                    <span className="text-emerald-600 font-black">৳{p.money}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {activePhoneTab === "clan" && (
+            <div className="p-4 text-center">
+              <div className="text-purple-600 font-black text-lg mb-2">Your Clan</div>
+              <div className="text-sm text-slate-600">Clan system coming soon...</div>
+              <div className="mt-4 text-[10px] text-slate-400">Create or join a clan to play together</div>
+            </div>
+          )}
+
+          {activePhoneTab === "trade" && (
+            <div className="p-4">
+              <div className="text-emerald-600 font-black text-lg mb-3">Player Trading</div>
+              <div className="text-sm text-slate-600 mb-3">Select a player to trade with</div>
+              
+              {Object.values(gameState?.players || {})
+                .filter((p: any) => p.id !== myId)
+                .slice(0, 6)
+                .map((player: any, i) => (
+                  <div key={i} className="flex justify-between items-center bg-white p-3 rounded-xl border mb-2">
+                    <div>
+                      <span className="font-bold">{player.name}</span>
+                      <span className="text-xs text-slate-400 ml-2">৳{player.money}</span>
+                    </div>
+                    <button 
+                      onClick={() => {
+                        const amount = prompt("How much money do you want to send?");
+                        if (amount && parseInt(amount) > 0 && (me.money || 0) >= parseInt(amount)) {
+                          const updates: any = {};
+                          updates[`rooms/${roomId}/gameState/players/${myId}/money`] = (me.money || 0) - parseInt(amount);
+                          updates[`rooms/${roomId}/gameState/players/${player.id}/money`] = (player.money || 0) + parseInt(amount);
+                          update(ref(rtdb), updates);
+                          alert(`Sent ৳${amount} to ${player.name}`);
+                        }
+                      }}
+                      className="px-4 py-1 bg-emerald-600 text-white text-sm rounded-lg font-bold active:scale-95"
+                    >
+                      Send Money
+                    </button>
+                  </div>
+                ))}
+            </div>
+          )}
+
+          {activePhoneTab === "events" && (
+            <div className="p-4 text-center">
+              <div className="text-orange-600 font-black text-lg mb-2">Global Events</div>
+              <div className="text-sm text-slate-600">Seasonal events & global missions coming soon...</div>
+            </div>
+          )}
+
+          {activePhoneTab === "property" && (
+            <div className="p-4">
+              <div className="text-blue-600 font-black text-lg mb-3">Real Estate</div>
+              
+              {/* Multiple Properties */}
+              {[
+                { id: "apartment", name: "Village Apartment", price: 15000, sell: 12000 },
+                { id: "house", name: "Brick House", price: 45000, sell: 36000 },
+                { id: "shop", name: "Corner Shop", price: 85000, sell: 68000 },
+                { id: "farm", name: "Small Farm", price: 120000, sell: 95000 },
+              ].map((prop, index) => (
+                <div key={index} className="mb-4 border-b pb-3">
+                  <div className="flex justify-between items-center mb-1">
+                    <span className="font-bold">{prop.name}</span>
+                    <span className="text-sm text-emerald-600 font-black">৳{prop.price}</span>
+                  </div>
+                  {!me.ownedProperties?.includes(prop.id) ? (
+                    <button 
+                      onClick={() => {
+                        if ((me.money || 0) >= prop.price) {
+                          const updates: any = {};
+                          updates[`rooms/${roomId}/gameState/players/${myId}/money`] = (me.money || 0) - prop.price;
+                          updates[`rooms/${roomId}/gameState/players/${myId}/ownedProperties`] = [...(me.ownedProperties || []), prop.id];
+                          update(ref(rtdb), updates);
+                        }
+                      }}
+                      className="w-full py-2 bg-emerald-600 text-white rounded-xl text-sm font-black active:scale-95"
+                    >
+                      BUY
+                    </button>
+                  ) : (
+                    <button 
+                      onClick={() => {
+                        const updates: any = {};
+                        updates[`rooms/${roomId}/gameState/players/${myId}/money`] = (me.money || 0) + prop.sell;
+                        const newProps = (me.ownedProperties || []).filter(p => p !== prop.id);
+                        updates[`rooms/${roomId}/gameState/players/${myId}/ownedProperties`] = newProps.length ? newProps : null;
+                        update(ref(rtdb), updates);
+                      }}
+                      className="w-full py-2 bg-red-600 text-white rounded-xl text-sm font-black active:scale-95"
+                    >
+                      SELL (Get ৳{prop.sell})
+                    </button>
+                  )}
+                </div>
+              ))}
+
+              <div className="text-[10px] text-slate-400 text-center mt-2">Properties are saved permanently</div>
+            </div>
+          )}
+ 
+       </div>
 
       {/* Home Indicator */}
       <div className="h-8 bg-slate-100 flex items-center justify-center">

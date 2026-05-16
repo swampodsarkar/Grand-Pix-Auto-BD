@@ -79,9 +79,24 @@ interface StoreState {
   waypoint: { x: number, y: number } | null;
   setWaypoint: (waypoint: { x: number, y: number } | null) => void;
   graphicsQuality: "low" | "medium" | "high";
+  level: number;
+  xp: number;
+  reputation: number;
+  clan: string | null;
+  season: string;
+  lastLogin: number;
+  dailyRewardClaimed: boolean;
+  tutorialStep: number;
+  hasSeenTutorial: boolean;
+  job: string | null;
+  wantedLevel: number;
   ping: number;
   setPing: (ping: number) => void;
   setGraphicsQuality: (quality: "low" | "medium" | "high") => void;
+  setLevel: (level: number) => void;
+  addXP: (amount: number) => void;
+  setTutorialStep: (step: number) => void;
+  setJob: (job: string | null) => void;
   currentScreen: "menu" | "login" | "lobby" | "game" | "character";
   characterType: string | null;
   setPlayerName: (name: string) => void;
@@ -123,8 +138,27 @@ export const useGameStore = create<StoreState>((set) => {
     waypoint: null,
     setWaypoint: (waypoint) => set({ waypoint }),
     graphicsQuality: savedGraphicsQuality || "high",
+    level: 1,
+    xp: 0,
+    reputation: 0,
+    clan: null,
+    season: "Summer",
+    lastLogin: Date.now(),
+    dailyRewardClaimed: false,
+    tutorialStep: 0,
+    hasSeenTutorial: false,
+    job: null,
+    wantedLevel: 0,
     ping: 0,
     setPing: (ping) => set({ ping }),
+    setLevel: (level) => set({ level }),
+    addXP: (amount) => set((state) => {
+      const newXP = state.xp + amount;
+      if (newXP >= 100) {
+        return { xp: 0, level: state.level + 1 };
+      }
+      return { xp: newXP };
+    }),
     currentScreen: savedPlayerName ? (savedCharacterType ? "menu" : "character") : "login",
     characterType: savedCharacterType,
     setPlayerName: (name) => {
