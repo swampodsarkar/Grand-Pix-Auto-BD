@@ -17,16 +17,29 @@ export default function App() {
   const updateGameState = useGameStore(s => s.updateGameState);
   const setPing = useGameStore(s => s.setPing);
 
-  // Force landscape on Android/mobile
+  // Force landscape on web/mobile
   useEffect(() => {
-    const lockLandscape = async () => {
+    const forceLandscape = async () => {
       try {
         if (screen.orientation && screen.orientation.lock) {
           await screen.orientation.lock("landscape");
+        } else if (window.innerHeight > window.innerWidth) {
+          alert("Please rotate your device to landscape mode for best experience!");
         }
       } catch {}
     };
-    lockLandscape();
+    forceLandscape();
+    
+    // Also lock on resize
+    const handleResize = () => {
+      if (window.innerHeight > window.innerWidth) {
+        if (screen.orientation && screen.orientation.lock) {
+          screen.orientation.lock("landscape").catch(() => {});
+        }
+      }
+    };
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
   }, []);
 
   // Ping heartbeat

@@ -161,13 +161,13 @@ export function HUD() {
         )}
       </AnimatePresence>
       {/* Top Left: Navigation & Chat */}
-      <div className="absolute top-4 left-4 flex flex-col gap-3 pointer-events-none">
+      <div className="absolute top-4 left-4 flex flex-col gap-3 pointer-events-none z-[800]">
         {/* Minimap Header */}
         <div className="flex items-start gap-3">
-          <button 
-            onClick={() => setShowFullMap(true)}
-            className="group relative transition-transform active:scale-95 outline-none pointer-events-auto w-24 h-24 md:w-32 md:h-32 flex-shrink-0"
-          >
+            <button 
+             onClick={() => setShowFullMap(true)}
+             className="group relative transition-transform active:scale-95 outline-none pointer-events-auto w-20 h-20 md:w-24 md:h-24 flex-shrink-0 z-[900]"
+           >
             <Minimap />
             <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 flex items-center justify-center transition-colors rounded-full overflow-hidden">
                <span className="text-[8px] md:text-[10px] font-black text-white opacity-0 group-hover:opacity-100 uppercase tracking-widest shadow-lg">Map</span>
@@ -205,7 +205,7 @@ export function HUD() {
       </div>
 
       {/* Top Right: Status */}
-      <div className="absolute top-2 right-2 md:top-4 md:right-4 flex flex-col items-end gap-1 landscape:gap-1.5">
+      <div className="absolute top-2 right-2 md:top-4 md:right-4 flex flex-col items-end gap-1 landscape:gap-1.5 z-[950]">
         <div className="flex gap-2 items-center pointer-events-auto">
           <button 
             onClick={() => setShowSettings(true)}
@@ -498,19 +498,53 @@ function PhoneUI() {
 
       {/* Content */}
       <div className="flex-1 bg-slate-100 overflow-y-auto p-4 text-slate-900 scrollbar-hide">
-          {activePhoneTab === "home" && (
-            <div className="grid grid-cols-2 landscape:grid-cols-4 gap-3 landscape:gap-4 pt-4 landscape:pt-6">
-              <PhoneAppIcon icon={Landmark} label="Bank" color="bg-lime-600" onClick={() => togglePhoneState("bank")} />
-              <PhoneAppIcon icon={ShoppingBag} label="Inventory" color="bg-indigo-600" onClick={() => togglePhoneState("inventory")} />
-               <PhoneAppIcon icon={Users} label="Contacts" color="bg-blue-500" onClick={() => togglePhoneState("contacts")} />
-               <PhoneAppIcon icon={MapIcon} label="Village Map" color="bg-slate-800" onClick={() => { setShowFullMap(true); togglePhoneState(null); }} />
-               <PhoneAppIcon icon={Trophy} label="Leaderboard" color="bg-yellow-600" onClick={() => togglePhoneState("leaderboard")} />
-               <PhoneAppIcon icon={Users} label="Clan" color="bg-purple-600" onClick={() => togglePhoneState("clan")} />
-               <PhoneAppIcon icon={ShoppingBag} label="Trade" color="bg-emerald-600" onClick={() => togglePhoneState("trade")} />
-               <PhoneAppIcon icon={Calendar} label="Events" color="bg-orange-600" onClick={() => togglePhoneState("events")} />
-               <PhoneAppIcon icon={Home} label="Property" color="bg-blue-600" onClick={() => togglePhoneState("property")} />
-            </div>
-          )}
+           {activePhoneTab === "home" && (
+             <div className="grid grid-cols-2 landscape:grid-cols-4 gap-3 landscape:gap-4 pt-4 landscape:pt-6">
+               <PhoneAppIcon icon={Landmark} label="Bank" color="bg-lime-600" onClick={() => togglePhoneState("bank")} />
+               <PhoneAppIcon icon={ShoppingBag} label="Inventory" color="bg-indigo-600" onClick={() => togglePhoneState("inventory")} />
+                <PhoneAppIcon icon={Users} label="Contacts" color="bg-blue-500" onClick={() => togglePhoneState("contacts")} />
+                <PhoneAppIcon icon={MapIcon} label="Village Map" color="bg-slate-800" onClick={() => { setShowFullMap(true); togglePhoneState(null); }} />
+                <PhoneAppIcon icon={Trophy} label="Leaderboard" color="bg-yellow-600" onClick={() => togglePhoneState("leaderboard")} />
+                <PhoneAppIcon icon={Users} label="Clan" color="bg-purple-600" onClick={() => togglePhoneState("clan")} />
+                <PhoneAppIcon icon={ShoppingBag} label="Trade" color="bg-emerald-600" onClick={() => togglePhoneState("trade")} />
+                <PhoneAppIcon icon={Calendar} label="Events" color="bg-orange-600" onClick={() => togglePhoneState("events")} />
+                <PhoneAppIcon icon={Home} label="Property" color="bg-blue-600" onClick={() => togglePhoneState("property")} />
+             </div>
+           )}
+
+           {activePhoneTab === "contacts" && (
+             <div className="p-4">
+               <div className="text-blue-600 font-black text-lg mb-3">Online Players</div>
+               
+               {Object.values(gameState?.players || {})
+                 .filter((p: any) => p.id !== myId)
+                 .map((player: any, i) => (
+                   <div key={i} className="flex justify-between items-center bg-white p-3 rounded-xl border mb-2">
+                     <span className="font-bold">{player.name}</span>
+                     <button 
+                       onClick={() => {
+                         if (!myId || !roomId) return;
+                         const updates: any = {};
+                         updates[`rooms/${roomId}/gameState/players/${myId}/friends/${player.id}`] = {
+                           name: player.name,
+                           status: "pending",
+                           timestamp: Date.now()
+                         };
+                         update(ref(rtdb), updates);
+                         alert(`Friend request sent to ${player.name}!`);
+                       }}
+                       className="px-3 py-1 bg-blue-600 text-white text-xs rounded-lg font-bold active:scale-95"
+                     >
+                       Add Friend
+                     </button>
+                   </div>
+                 ))}
+               
+               {Object.keys(gameState?.players || {}).length <= 1 && (
+                 <div className="text-center text-sm text-slate-500 mt-4">No other players online</div>
+               )}
+             </div>
+           )}
 
           {activePhoneTab === "inventory" && (
             <div className="flex flex-col gap-4">
@@ -722,6 +756,46 @@ function PhoneUI() {
               ))}
 
               <div className="text-[10px] text-slate-400 text-center mt-2">Properties are saved permanently</div>
+
+              {/* Instant Vehicle Spawn */}
+              <div className="mt-6 pt-4 border-t">
+                <div className="text-blue-600 font-black text-sm mb-3">Spawn Vehicle ($20 each)</div>
+                <div className="grid grid-cols-3 gap-2">
+                  {[
+                    { type: "sedan", label: "Car" },
+                    { type: "bike", label: "Bike" },
+                    { type: "quad", label: "Quad" }
+                  ].map((v, i) => (
+                    <button 
+                      key={i}
+                      onClick={() => {
+                        if ((me.money || 0) >= 20 && myId && roomId) {
+                          const updates: any = {};
+                          updates[`rooms/${roomId}/gameState/players/${myId}/money`] = (me.money || 0) - 20;
+                          
+                          const newVehicleId = "v_" + Date.now();
+                          updates[`rooms/${roomId}/gameState/vehicles/${newVehicleId}`] = {
+                            id: newVehicleId,
+                            x: (me.x || 0) + 60,
+                            y: (me.y || 0) + 40,
+                            angle: 0,
+                            speed: 0,
+                            fuel: 100,
+                            health: 100,
+                            carType: v.type,
+                            brand: "Spawned",
+                            ownerId: myId
+                          };
+                          update(ref(rtdb), updates);
+                        }
+                      }}
+                      className="py-2 bg-blue-600 text-white text-xs font-black rounded-xl active:scale-95"
+                    >
+                      {v.label} ($20)
+                    </button>
+                  ))}
+                </div>
+              </div>
             </div>
           )}
  

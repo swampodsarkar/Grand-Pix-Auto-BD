@@ -4,6 +4,10 @@ import { Phone, ShoppingBag, MessageSquare } from "lucide-react";
 
 export function MobileControls() {
   const togglePhoneState = useGameStore(s => s.togglePhoneState);
+  const gameState = useGameStore(s => s.gameState);
+  const myId = useGameStore(s => s.myId);
+  const inVehicle = myId && gameState?.players[myId]?.inVehicleId;
+
   const [joy, setJoy] = useState({ x: 0, y: 0, active: false });
   const joyRef = useRef<HTMLDivElement>(null);
 
@@ -54,22 +58,38 @@ export function MobileControls() {
   };
 
   return (
-    <div className="fixed inset-0 pointer-events-none p-2 md:p-3 landscape:p-1 flex justify-between items-end">
-      {/* CIRCLE JOYSTICK (small) */}
-      <div
-        ref={joyRef}
-        className="w-20 h-20 landscape:w-16 landscape:h-16 rounded-full border-[5px] border-slate-600 bg-slate-900/70 pointer-events-auto relative touch-none"
-        onPointerDown={e => startJoy(e.clientX, e.clientY)}
-        onPointerMove={e => moveJoy(e.clientX, e.clientY)}
-        onPointerUp={endJoy}
-        onPointerLeave={endJoy}
-        onPointerCancel={endJoy}
-      >
+    <div className="fixed inset-0 pointer-events-none p-3 flex justify-between items-end z-[999]">
+      {/* Joystick - D-pad when in vehicle, Analog otherwise */}
+      {inVehicle ? (
+        // D-PAD for vehicles
+        <div className="grid grid-cols-3 gap-1 pointer-events-auto opacity-90">
+          <div />
+          <ControlButton label="▲" onDown={() => handleKeydown("w")} onUp={() => handleKeyup("w")} />
+          <div />
+          <ControlButton label="◀" onDown={() => handleKeydown("a")} onUp={() => handleKeyup("a")} />
+          <div />
+          <ControlButton label="▶" onDown={() => handleKeydown("d")} onUp={() => handleKeyup("d")} />
+          <div />
+          <ControlButton label="▼" onDown={() => handleKeydown("s")} onUp={() => handleKeyup("s")} />
+          <div />
+        </div>
+      ) : (
+        // CIRCLE JOYSTICK (small)
         <div
-          className="absolute w-8 h-8 bg-white/90 rounded-full shadow border border-slate-400 transition-transform"
-          style={{ left: `calc(50% + ${joy.x}px - 16px)`, top: `calc(50% + ${joy.y}px - 16px)` }}
-        />
-      </div>
+          ref={joyRef}
+          className="w-20 h-20 rounded-full border-[5px] border-slate-600 bg-slate-900/70 pointer-events-auto relative touch-none z-[1000]"
+          onPointerDown={e => startJoy(e.clientX, e.clientY)}
+          onPointerMove={e => moveJoy(e.clientX, e.clientY)}
+          onPointerUp={endJoy}
+          onPointerLeave={endJoy}
+          onPointerCancel={endJoy}
+        >
+          <div
+            className="absolute w-8 h-8 bg-white/90 rounded-full shadow border border-slate-400 transition-transform"
+            style={{ left: `calc(50% + ${joy.x}px - 16px)`, top: `calc(50% + ${joy.y}px - 16px)` }}
+          />
+        </div>
+      )}
 
       {/* Buttons Area (Bottom Right) */}
       <div className="flex flex-col gap-2 items-end pointer-events-auto">

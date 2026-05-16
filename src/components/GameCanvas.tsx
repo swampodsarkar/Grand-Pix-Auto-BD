@@ -259,7 +259,7 @@ export function GameCanvas() {
         });
 
         const now = Date.now();
-        if (hasSignificantChange && now - lastFirebaseUpdate > 80) { // ~12.5 updates/sec max (mobile friendly)
+        if (hasSignificantChange && now - lastFirebaseUpdate > 120) { // ~8 updates/sec (web optimized)
             lastFirebaseUpdate = now;
             update(ref(rtdb), updates);
          }
@@ -614,7 +614,7 @@ export function GameCanvas() {
       // Performance optimization
       const showShadows = graphicsQuality !== "low";
       const renderDist = graphicsQuality === "low" ? 1200 : graphicsQuality === "medium" ? 2200 : 3500;
-      const maxParticles = graphicsQuality === "low" ? 80 : graphicsQuality === "medium" ? 150 : 300;
+      const maxParticles = graphicsQuality === "low" ? 50 : graphicsQuality === "medium" ? 100 : 200; // Web optimized
       
       // Draw Grid / Ground Textures
       const drawGrid = (size: number, color: string) => {
@@ -840,8 +840,11 @@ export function GameCanvas() {
       const me = state.players[myId];
       if (me) {
         // Lerp camera (cinematic focus with target leading based on speed/direction)
-        let targetCamX = me.x - canvas.width / 2;
-        let targetCamY = me.y - canvas.height / 2;
+        const logicalWidth = window.innerWidth;
+        const logicalHeight = window.innerHeight;
+
+        let targetCamX = me.x - logicalWidth / 2;
+        let targetCamY = me.y - logicalHeight / 2;
 
         if (me.inVehicleId && state.vehicles[me.inVehicleId]) {
            const v = state.vehicles[me.inVehicleId];
@@ -1279,16 +1282,59 @@ export function GameCanvas() {
               // Taxi drawing already exists
 
             } else if (item.carType === "quad") {
-              // Quad Bike
-              ctx.fillStyle = "#334155";
-              ctx.fillRect(-18, -10, 36, 20);
+              // Realistic Quad Bike
+              ctx.save();
+              
+              // Main body (frame)
               ctx.fillStyle = "#1e2937";
-              ctx.fillRect(-10, -6, 20, 12);
+              ctx.fillRect(-20, -8, 40, 16);
+              
+              // Seat
+              ctx.fillStyle = "#334155";
+              ctx.fillRect(-8, -10, 16, 6);
+              
+              // Engine area
+              ctx.fillStyle = "#475569";
+              ctx.fillRect(-14, -4, 12, 8);
+              
+              // Front rack
               ctx.fillStyle = "#64748b";
-              ctx.fillRect(-22, -14, 8, 8);
-              ctx.fillRect(14, -14, 8, 8);
-              ctx.fillRect(-22, 6, 8, 8);
-              ctx.fillRect(14, 6, 8, 8);
+              ctx.fillRect(16, -12, 10, 24);
+              
+              // Rear rack
+              ctx.fillRect(-26, -12, 10, 24);
+              
+              // Wheels
+              ctx.fillStyle = "#0f172a";
+              ctx.beginPath();
+              ctx.arc(-18, -10, 7, 0, Math.PI * 2);
+              ctx.fill();
+              ctx.beginPath();
+              ctx.arc(18, -10, 7, 0, Math.PI * 2);
+              ctx.fill();
+              ctx.beginPath();
+              ctx.arc(-18, 10, 7, 0, Math.PI * 2);
+              ctx.fill();
+              ctx.beginPath();
+              ctx.arc(18, 10, 7, 0, Math.PI * 2);
+              ctx.fill();
+              
+              // Wheel rims
+              ctx.fillStyle = "#94a3b8";
+              ctx.beginPath();
+              ctx.arc(-18, -10, 3, 0, Math.PI * 2);
+              ctx.fill();
+              ctx.beginPath();
+              ctx.arc(18, -10, 3, 0, Math.PI * 2);
+              ctx.fill();
+              ctx.beginPath();
+              ctx.arc(-18, 10, 3, 0, Math.PI * 2);
+              ctx.fill();
+              ctx.beginPath();
+              ctx.arc(18, 10, 3, 0, Math.PI * 2);
+              ctx.fill();
+              
+              ctx.restore();
 
             } else if (item.carType === "helicopter") {
               // Helicopter
