@@ -1,0 +1,6 @@
+{
+  "name": "Village Life Simulator 2D",
+  "description": "A realistic Bangladeshi village life simulator. Buy land at the Bhumi Registry, plant crops (potato, wheat, corn), sell at the Gramer Haat, fish in the pond, and live the peaceful Homestead life.",
+  "requestFramePermissions": ["microphone"],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
